@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Tabs</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <header class="header">
+      <span class="brand">
+        <svg viewBox="0 0 24 24" fill="none" aria-hidden="true" class="logo">
+          <rect x="2.5" y="6.5" width="19" height="14" rx="3" stroke="currentColor" stroke-width="1.5" />
+          <path d="M2.5 10.5h19" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" />
+          <circle cx="6" cy="8.5" r="0.9" fill="currentColor" />
+        </svg>
+        Tabs
+      </span>
+      <button id="open-workspace" class="link" type="button">Open workspace</button>
+    </header>
+
+    <div id="status" class="status" hidden></div>
+
+    <main class="body">
+      <label class="label" for="collection">Save to</label>
+      <select id="collection" class="select">
+        <option value="">Loading collections…</option>
+      </select>
+
+      <div class="actions">
+        <button id="save-current" class="button primary" type="button" disabled>
+          Save current tab
+        </button>
+        <button id="save-all" class="button" type="button" disabled>
+          Save all tabs (<span id="tab-count">0</span>)
+        </button>
+      </div>
+
+      <hr class="rule" />
+
+      <label class="label" for="search">Search saved tabs</label>
+      <form id="search-form" class="search-row">
+        <input
+          id="search"
+          class="input"
+          type="search"
+          placeholder="sql murder, yt, eld map…"
+          autocomplete="off"
+        />
+        <button class="button" type="submit">Go</button>
+      </form>
+      <p class="hint">Opens the workspace with quick search ready.</p>
+    </main>
+
+    <script type="module" src="popup.js"></script>
+  </body>
+</html>

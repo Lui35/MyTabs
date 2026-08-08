@@ -1,0 +1,13 @@
+{
+  "permissions": {
+    "allow": [
+      "PowerShell(node --version)",
+      "PowerShell(npm --version)",
+      "mcp__e8ace660-a729-4506-8d7e-37e95e4027b3__list_projects",
+      "mcp__e8ace660-a729-4506-8d7e-37e95e4027b3__list_tables",
+      "mcp__e8ace660-a729-4506-8d7e-37e95e4027b3__list_migrations",
+      "mcp__e8ace660-a729-4506-8d7e-37e95e4027b3__get_cost",
+      "mcp__e8ace660-a729-4506-8d7e-37e95e4027b3__confirm_cost"
+    ]
+  }
+}

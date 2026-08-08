@@ -1,26 +1,280 @@
 @import "tailwindcss";
 
+/* next-themes toggles `class="dark"` on <html>. */
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* ============================================================
+   Design tokens
+   Neutral, slightly cool greys — never pure black or pure white.
+   ============================================================ */
+
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --background: oklch(0.985 0.002 265);
+  --surface: oklch(1 0 0);
+  --surface-hover: oklch(0.975 0.003 265);
+  --elevated: oklch(1 0 0);
+
+  --foreground: oklch(0.24 0.012 268);
+  --muted: oklch(0.958 0.003 265);
+  --muted-foreground: oklch(0.54 0.014 268);
+  --faint-foreground: oklch(0.66 0.012 268);
+
+  --border: oklch(0.912 0.004 265);
+  --border-strong: oklch(0.855 0.007 265);
+
+  --accent: oklch(0.55 0.2 277);
+  --accent-hover: oklch(0.5 0.2 277);
+  --accent-foreground: oklch(0.99 0 0);
+  --accent-soft: oklch(0.947 0.032 277);
+  --accent-soft-foreground: oklch(0.44 0.19 277);
+
+  --destructive: oklch(0.56 0.216 26);
+  --destructive-hover: oklch(0.51 0.216 26);
+  --destructive-foreground: oklch(0.99 0 0);
+  --destructive-soft: oklch(0.955 0.03 26);
+
+  --success: oklch(0.6 0.15 155);
+  --warning: oklch(0.7 0.16 75);
+
+  --ring: oklch(0.55 0.2 277);
+
+  --shadow-color: 265 20% 30%;
+  --radius: 0.625rem;
+}
+
+.dark {
+  --background: oklch(0.168 0.008 268);
+  --surface: oklch(0.208 0.009 268);
+  --surface-hover: oklch(0.245 0.01 268);
+  --elevated: oklch(0.232 0.01 268);
+
+  --foreground: oklch(0.955 0.003 265);
+  --muted: oklch(0.245 0.009 268);
+  --muted-foreground: oklch(0.685 0.013 268);
+  --faint-foreground: oklch(0.58 0.012 268);
+
+  --border: oklch(0.288 0.011 268);
+  --border-strong: oklch(0.365 0.014 268);
+
+  --accent: oklch(0.645 0.185 277);
+  --accent-hover: oklch(0.7 0.175 277);
+  --accent-foreground: oklch(0.145 0.02 277);
+  --accent-soft: oklch(0.305 0.065 277);
+  --accent-soft-foreground: oklch(0.84 0.09 277);
+
+  --destructive: oklch(0.61 0.2 25);
+  --destructive-hover: oklch(0.66 0.19 25);
+  --destructive-foreground: oklch(0.99 0 0);
+  --destructive-soft: oklch(0.3 0.07 25);
+
+  --success: oklch(0.68 0.14 155);
+  --warning: oklch(0.76 0.15 75);
+
+  --ring: oklch(0.645 0.185 277);
+
+  --shadow-color: 265 40% 2%;
 }
 
 @theme inline {
   --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-surface-hover: var(--surface-hover);
+  --color-elevated: var(--elevated);
+
   --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-faint-foreground: var(--faint-foreground);
+
+  --color-border: var(--border);
+  --color-border-strong: var(--border-strong);
+
+  --color-accent: var(--accent);
+  --color-accent-hover: var(--accent-hover);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent-soft: var(--accent-soft);
+  --color-accent-soft-foreground: var(--accent-soft-foreground);
+
+  --color-destructive: var(--destructive);
+  --color-destructive-hover: var(--destructive-hover);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-destructive-soft: var(--destructive-soft);
+
+  --color-success: var(--success);
+  --color-warning: var(--warning);
+  --color-ring: var(--ring);
+
+  --font-sans: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-geist-mono), ui-monospace, monospace;
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+
+  --animate-in-fade: fade-in 0.15s ease-out;
+  --animate-overlay: overlay-in 0.18s ease-out;
+  --animate-content: content-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-palette: palette-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+  --animate-slide-up: slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  /* Tailwind v4 no longer defaults border-color; opt back in. */
+  *,
+  ::after,
+  ::before,
+  ::backdrop {
+    border-color: var(--color-border);
+  }
+
+  html {
+    color-scheme: light;
+  }
+  .dark html,
+  html.dark {
+    color-scheme: dark;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  /* Only show focus rings from the keyboard, but never hide them entirely. */
+  [data-slot="focusable"]:focus:not(:focus-visible) {
+    outline: none;
+  }
+
+  ::selection {
+    background: var(--color-accent-soft);
+    color: var(--color-accent-soft-foreground);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer utilities {
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-border-strong) transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 10px;
+    height: 10px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background-color: var(--color-border-strong);
+    border-radius: 9999px;
+    border: 3px solid transparent;
+    background-clip: content-box;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-muted-foreground);
+    background-clip: content-box;
+  }
+
+  /* Panel shadow that reads on both themes. */
+  .shadow-panel {
+    box-shadow:
+      0 1px 2px -1px hsl(var(--shadow-color) / 0.12),
+      0 4px 12px -4px hsl(var(--shadow-color) / 0.1);
+  }
+  .shadow-float {
+    box-shadow:
+      0 2px 4px -2px hsl(var(--shadow-color) / 0.16),
+      0 12px 32px -8px hsl(var(--shadow-color) / 0.24);
+  }
+
+  .no-drag-select {
+    user-select: none;
+    -webkit-user-select: none;
+  }
+}
+
+/* ---------- keyframes ---------- */
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes overlay-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes content-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -48%) scale(0.97);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+
+@keyframes palette-in {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 0) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0) scale(1);
+  }
+}
+
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Radix data-state driven animation hooks. */
+[data-state="open"][data-slot="overlay"] {
+  animation: var(--animate-overlay);
+}
+[data-state="open"][data-slot="dialog-content"] {
+  animation: var(--animate-content);
+}
+[data-state="open"][data-slot="palette-content"] {
+  animation: var(--animate-palette);
+}
+[data-state="open"][data-slot="menu-content"] {
+  animation: var(--animate-slide-up);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }
