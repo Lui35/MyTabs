@@ -2,7 +2,12 @@
 
 import * as React from "react";
 import { useDroppable } from "@dnd-kit/core";
-import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import {
+  SortableContext,
+  rectSortingStrategy,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronRight,
@@ -37,6 +42,20 @@ export const collectionDropId = (collectionId: string) => `drop:${collectionId}`
 export interface DropTarget {
   collectionId: string;
   index: number;
+}
+
+/**
+ * Grid equivalent of the insertion line: a ghost tile occupying the slot the
+ * drop would land in. A 2px line is meaningless in a wrapped grid, and this
+ * matches the fixed card height exactly.
+ */
+function GridDropSlot() {
+  return (
+    <div
+      aria-hidden
+      className="h-[70px] rounded-lg border-2 border-dashed border-accent bg-accent-soft/30"
+    />
+  );
 }
 
 function DropLine({ visible }: { visible: boolean }) {
@@ -141,6 +160,7 @@ export function CollectionCard({
   const count = orderedIds.length;
   const collapsed = collection.collapsed;
   const sortingLocked = sortMode !== "manual";
+  const isGrid = viewMode === "grid";
 
   return (
     <section
@@ -252,9 +272,15 @@ export function CollectionCard({
           ref={setDropRef}
           className={cn("px-2 pb-2", viewMode === "grid" && "px-3")}
         >
+          {/*
+            The vertical strategy only ever produces Y offsets, so in a wrapped
+            grid the tiles slid up and down their own column instead of flowing
+            round to the previous/next row. rectSortingStrategy measures the
+            real rects and moves items in both axes.
+          */}
           <SortableContext
             items={orderedIds}
-            strategy={verticalListSortingStrategy}
+            strategy={isGrid ? rectSortingStrategy : verticalListSortingStrategy}
           >
             {count === 0 ? (
               <EmptyCollection
@@ -272,9 +298,11 @@ export function CollectionCard({
               >
                 {orderedIds.map((tabId, index) => (
                   <React.Fragment key={tabId}>
-                    {viewMode !== "grid" ? (
+                    {isGrid ? (
+                      dropTarget?.index === index ? <GridDropSlot /> : null
+                    ) : (
                       <DropLine visible={dropTarget?.index === index} />
-                    ) : null}
+                    )}
                     <TabRow
                       tabId={tabId}
                       collectionId={collectionId}
@@ -284,9 +312,11 @@ export function CollectionCard({
                     />
                   </React.Fragment>
                 ))}
-                {viewMode !== "grid" ? (
+                {isGrid ? (
+                  dropTarget?.index === count ? <GridDropSlot /> : null
+                ) : (
                   <DropLine visible={dropTarget?.index === count} />
-                ) : null}
+                )}
               </div>
             )}
           </SortableContext>
