@@ -16,7 +16,7 @@ import {
 
 // requestId -> { resolve, timer }
 const pending = new Map();
-const REQUEST_TIMEOUT = 8000;
+const REQUEST_TIMEOUT = 15000;
 
 function newRequestId() {
   return `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
@@ -67,10 +67,36 @@ async function askApp(message, { openIfClosed = true } = {}) {
     pending.set(requestId, { resolve, timer });
   });
 
-  await chrome.tabs.sendMessage(appTab.id, {
-    channel: "TO_PAGE",
-    payload,
-  });
+  try {
+    try {
+      await chrome.tabs.sendMessage(appTab.id, {
+        channel: "TO_PAGE",
+        payload,
+      });
+    } catch (error) {
+      const detail = String(error?.message ?? error);
+      const receiverMissing =
+        detail.includes("Receiving end does not exist") ||
+        detail.includes("Could not establish connection");
+
+      if (!receiverMissing) throw error;
+
+      // Tabs that were open when the extension reloaded still have the old,
+      // invalid content-script context. Reload once so Chrome injects the
+      // current production bridge, then retry the original request.
+      await chrome.tabs.reload(appTab.id);
+      await new Promise((resolve) => setTimeout(resolve, 2500));
+      await chrome.tabs.sendMessage(appTab.id, {
+        channel: "TO_PAGE",
+        payload,
+      });
+    }
+  } catch (error) {
+    const entry = pending.get(requestId);
+    if (entry) clearTimeout(entry.timer);
+    pending.delete(requestId);
+    throw error;
+  }
 
   return reply;
 }

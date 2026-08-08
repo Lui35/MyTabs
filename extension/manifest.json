@@ -34,7 +34,7 @@
 
   "content_scripts": [
     {
-      "matches": ["http://localhost:3000/*", "http://127.0.0.1:3000/*"],
+      "matches": ["https://my-tabs-phi.vercel.app/*"],
       "js": ["content-bridge.js"],
       "run_at": "document_start",
       "all_frames": false

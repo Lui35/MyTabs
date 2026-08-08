@@ -11,7 +11,7 @@ export const PROTOCOL_VERSION = 1;
  * Origins the workspace is served from. The content script is registered for
  * these in the manifest; add your production origin to both places.
  */
-export const APP_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"];
+export const APP_ORIGINS = ["https://my-tabs-phi.vercel.app"];
 
 export const DEFAULT_APP_URL = `${APP_ORIGINS[0]}/`;
 
