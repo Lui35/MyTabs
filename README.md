@@ -151,6 +151,24 @@ To point the extension at a deployed origin, add it to **both**
 `extension/manifest.json` (`content_scripts.matches`) and `APP_ORIGINS` in
 `extension/shared.js`.
 
+### New tab page
+
+The extension takes over the new tab page via `chrome_url_overrides`, so every
+new tab opens the workspace.
+
+Chrome only accepts a packaged extension page there — it will not let an
+override point straight at an external URL. `extension/newtab.html` is
+therefore a minimal themed splash that immediately hands off with
+`location.replace(DEFAULT_APP_URL)`. Using `replace` keeps the override out of
+the back-button history, and the splash reveals a manual link if the workspace
+can't be reached (dev server down, wrong origin configured).
+
+The destination is `DEFAULT_APP_URL` in `extension/shared.js`, so there is no
+third place to update when you deploy.
+
+To keep Chrome's own new tab page, delete the `chrome_url_overrides` block from
+the manifest and reload the extension.
+
 ---
 
 ## Project layout
