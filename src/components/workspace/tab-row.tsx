@@ -101,22 +101,28 @@ export function TabRowContent({
   const domain = getDomain(tab.url);
   const title = tab.title || domain || tab.url;
 
-  const iconSize = viewMode === "grid" ? 20 : viewMode === "compact" ? 14 : 16;
+  const isGrid = viewMode === "grid";
+  const iconSize = viewMode === "compact" ? 14 : 16;
 
   const body = (
     <div
       onPointerDown={onRowPointerDown}
+      // The description can run to a paragraph, so it lives in the tooltip
+      // rather than in the card, which keeps every grid tile the same size.
+      title={tab.description || undefined}
       className={cn(
         "group/tab relative flex items-center gap-2.5 rounded-lg border border-transparent bg-transparent transition-colors",
         "hover:border-border hover:bg-surface-hover",
         "focus-within:border-border focus-within:bg-surface-hover",
         viewMode === "compact" ? "px-2 py-1" : "px-2 py-1.5",
-        viewMode === "grid" && "h-full flex-col items-start gap-2 border-border bg-surface p-3",
+        // Fixed height: a long title or description must never make one tile
+        // taller than its neighbours.
+        isGrid && "h-[70px] flex-col items-stretch gap-0 border-border bg-surface p-3",
         overlay && "border-border bg-elevated shadow-float",
         menuOpen && "border-border bg-surface-hover",
       )}
     >
-      {viewMode !== "grid" ? (
+      {!isGrid ? (
         <button
           type="button"
           {...dragHandleProps}
@@ -131,7 +137,13 @@ export function TabRowContent({
         </button>
       ) : null}
 
-      <Favicon url={tab.url} favicon={tab.favicon ?? tab.faviconUrl} size={iconSize} />
+      {!isGrid ? (
+        <Favicon
+          url={tab.url}
+          favicon={tab.favicon ?? tab.faviconUrl}
+          size={iconSize}
+        />
+      ) : null}
 
       <a
         href={href}
@@ -145,31 +157,50 @@ export function TabRowContent({
         }}
         className={cn(
           "min-w-0 flex-1 outline-none",
-          viewMode === "grid" && "w-full",
+          isGrid && "flex w-full flex-col justify-center gap-1.5",
         )}
       >
-        <span
-          className={cn(
-            "block truncate font-medium text-foreground",
-            viewMode === "compact" ? "text-[13px]" : "text-sm",
-          )}
-          title={title}
-        >
-          {title}
-        </span>
-        {viewMode !== "compact" ? (
-          <span className="mt-0.5 block truncate text-xs text-muted-foreground">
-            {domain}
+        {isGrid ? (
+          // Icon sits inline with the title; `pr-5` keeps the hover menu from
+          // landing on top of it.
+          <span className="flex min-w-0 items-center gap-2 pr-5">
+            <Favicon
+              url={tab.url}
+              favicon={tab.favicon ?? tab.faviconUrl}
+              size={16}
+            />
+            <span
+              className="min-w-0 truncate text-sm font-medium text-foreground"
+              title={title}
+            >
+              {title}
+            </span>
           </span>
-        ) : null}
-        {viewMode === "grid" && tab.description ? (
-          <span className="mt-1.5 line-clamp-2 block text-xs text-muted-foreground">
-            {tab.description}
+        ) : (
+          <span
+            className={cn(
+              "block truncate font-medium text-foreground",
+              viewMode === "compact" ? "text-[13px]" : "text-sm",
+            )}
+            title={title}
+          >
+            {title}
+          </span>
+        )}
+
+        {viewMode !== "compact" ? (
+          <span
+            className={cn(
+              "block truncate text-xs text-muted-foreground",
+              !isGrid && "mt-0.5",
+            )}
+          >
+            {domain}
           </span>
         ) : null}
       </a>
 
-      {viewMode !== "grid" && tab.tags.length > 0 ? (
+      {!isGrid && tab.tags.length > 0 ? (
         <span className="hidden shrink-0 items-center gap-1 lg:flex">
           {tab.tags.slice(0, 2).map((tag) => (
             <span
@@ -192,7 +223,7 @@ export function TabRowContent({
                 "shrink-0 rounded p-1 text-muted-foreground transition-opacity hover:bg-muted hover:text-foreground",
                 "opacity-0 group-hover/tab:opacity-100 focus-visible:opacity-100",
                 menuOpen && "opacity-100",
-                viewMode === "grid" && "absolute right-2 top-2",
+                isGrid && "absolute right-1.5 top-2.5",
               )}
             >
               <Ellipsis className="size-3.5" />

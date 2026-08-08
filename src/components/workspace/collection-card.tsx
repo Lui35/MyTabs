@@ -239,8 +239,10 @@ export function CollectionCard({
             ) : (
               <div
                 className={cn(
+                  // Uniform tracks + fixed-height cards, so every tile in the
+                  // grid is exactly the same size regardless of its content.
                   viewMode === "grid" &&
-                    "grid grid-cols-[repeat(auto-fill,minmax(190px,1fr))] gap-2",
+                    "grid grid-cols-[repeat(auto-fill,minmax(210px,1fr))] gap-2",
                 )}
               >
                 {orderedIds.map((tabId, index) => (

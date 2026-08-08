@@ -357,7 +357,9 @@ export function WorkspaceScreen() {
       <div className="flex min-h-0 flex-1">
         {/* ---------------- main column ---------------- */}
         <main className="min-w-0 flex-1 overflow-y-auto scrollbar-thin">
-          <div className="mx-auto w-full max-w-4xl px-5 py-6">
+          {/* Full page width — collections should use the whole screen rather
+              than sit in a narrow reading column. */}
+          <div className="w-full px-6 py-6">
             <WorkspaceToolbar
               collectionCount={collectionOrder.length}
               tabCount={totalTabs}
