@@ -6,6 +6,7 @@ import {
   DragOverlay,
   KeyboardSensor,
   PointerSensor,
+  defaultDropAnimationSideEffects,
   pointerWithin,
   rectIntersection,
   useSensor,
@@ -15,6 +16,7 @@ import {
   type DragEndEvent,
   type DragOverEvent,
   type DragStartEvent,
+  type DropAnimation,
   type Over,
 } from "@dnd-kit/core";
 import { restrictToWindowEdges } from "@dnd-kit/modifiers";
@@ -70,17 +72,43 @@ import { TabRowContent } from "./tab-row";
 
 type ActiveDrag =
   | { type: "collection"; id: string }
-  | { type: "tab"; ids: string[] }
+  | { type: "tab"; ids: string[]; collectionId: string }
   | { type: "open-tab"; ids: string[] };
 
 /**
- * Pointer-first collision detection: while dragging a tab we care about what is
+ * Pointer-first collision detection: while dragging we care about what is
  * literally under the cursor, falling back to rect intersection near the edges
  * of a collection so drops just outside a row still land somewhere sensible.
+ *
+ * Candidates are also filtered to the kinds of target the current drag can
+ * actually accept. That keeps `over` inside the same SortableContext as the
+ * dragged item, which is what lets dnd-kit compute valid sibling offsets —
+ * without it, a collection hovering a tab yields an index of -1 and the
+ * shift animation jumps to nonsense positions.
  */
 const collisionDetection: CollisionDetection = (args) => {
-  const pointer = pointerWithin(args);
-  return pointer.length > 0 ? pointer : rectIntersection(args);
+  const activeType = args.active.data.current?.type;
+  const wantsCollections = activeType === "collection";
+
+  const droppableContainers = args.droppableContainers.filter((container) => {
+    const type = container.data.current?.type;
+    return wantsCollections
+      ? type === "collection"
+      : type === "tab" || type === "collection-body";
+  });
+
+  const scoped = { ...args, droppableContainers };
+  const pointer = pointerWithin(scoped);
+  return pointer.length > 0 ? pointer : rectIntersection(scoped);
+};
+
+/** The overlay glides into the item's final resting place instead of vanishing. */
+const dropAnimation: DropAnimation = {
+  duration: 220,
+  easing: "cubic-bezier(0.2, 0, 0, 1)",
+  sideEffects: defaultDropAnimationSideEffects({
+    styles: { active: { opacity: "0.35" } },
+  }),
 };
 
 export function WorkspaceScreen() {
@@ -115,9 +143,6 @@ export function WorkspaceScreen() {
   const [sortMode, setSortMode] = React.useState<SortMode>("manual");
   const [activeDrag, setActiveDrag] = React.useState<ActiveDrag | null>(null);
   const [dropTarget, setDropTarget] = React.useState<DropTarget | null>(null);
-  const [collectionDropIndex, setCollectionDropIndex] = React.useState<
-    number | null
-  >(null);
 
   const [editingId, setEditingId] = React.useState<string | null>(null);
   const [deletingId, setDeletingId] = React.useState<string | null>(null);
@@ -189,8 +214,12 @@ export function WorkspaceScreen() {
       return;
     }
 
-    if (data?.type === "tab") {
-      setActiveDrag({ type: "tab", ids: [String(event.active.id)] });
+    if (data?.type === "tab" && data.collectionId) {
+      setActiveDrag({
+        type: "tab",
+        ids: [String(event.active.id)],
+        collectionId: data.collectionId,
+      });
     }
   };
 
@@ -244,13 +273,9 @@ export function WorkspaceScreen() {
     const { active, over } = event;
     const activeData = active.data.current as { type?: string } | undefined;
 
-    if (activeData?.type === "collection") {
-      const overData = over?.data.current as { type?: string } | undefined;
-      if (over && overData?.type === "collection") {
-        setCollectionDropIndex(collectionOrder.indexOf(String(over.id)));
-      }
-      return;
-    }
+    // Collection reordering is shown by the cards themselves sliding apart,
+    // so there is no separate indicator state to track.
+    if (activeData?.type === "collection") return;
 
     setDropTarget(resolveTarget(active, over));
   };
@@ -258,7 +283,6 @@ export function WorkspaceScreen() {
   const reset = () => {
     setActiveDrag(null);
     setDropTarget(null);
-    setCollectionDropIndex(null);
   };
 
   const onDragEnd = (event: DragEndEvent) => {
@@ -390,22 +414,29 @@ export function WorkspaceScreen() {
                 strategy={verticalListSortingStrategy}
               >
                 <div className="space-y-3">
-                  {collectionOrder.map((id, index) => (
-                    <React.Fragment key={id}>
-                      {activeDrag?.type === "collection" &&
-                      collectionDropIndex === index &&
-                      activeDrag.id !== id ? (
-                        <div
-                          aria-hidden
-                          className="mx-1 h-0.5 rounded-full bg-accent"
-                        />
-                      ) : null}
+                  {collectionOrder.map((id) => {
+                    // Within one collection dnd-kit can shift the siblings
+                    // itself, which reads far better than a static line. Across
+                    // collections (and from the sidebar) the dragged item isn't
+                    // in the target's sortable context, so the insertion line
+                    // takes over there.
+                    const shiftTabs =
+                      activeDrag?.type === "tab" &&
+                      activeDrag.collectionId === id &&
+                      dropTarget?.collectionId === id;
+
+                    return (
                       <CollectionCard
+                        key={id}
                         collectionId={id}
                         viewMode={viewMode}
                         sortMode={sortMode}
+                        shiftTabs={Boolean(shiftTabs)}
+                        shiftCollections={activeDrag?.type === "collection"}
                         dropTarget={
-                          dropTarget?.collectionId === id ? dropTarget : null
+                          dropTarget?.collectionId === id && !shiftTabs
+                            ? dropTarget
+                            : null
                         }
                         isDropCandidate={dropTarget?.collectionId === id}
                         onRequestEdit={setEditingId}
@@ -423,8 +454,8 @@ export function WorkspaceScreen() {
                           );
                         }}
                       />
-                    </React.Fragment>
-                  ))}
+                    );
+                  })}
                 </div>
               </SortableContext>
             )}
@@ -450,7 +481,7 @@ export function WorkspaceScreen() {
       </Dialog>
 
       {/* ---------------- drag preview ---------------- */}
-      <DragOverlay dropAnimation={null}>
+      <DragOverlay dropAnimation={dropAnimation}>
         {activeDrag ? <DragPreview drag={activeDrag} viewMode={viewMode} /> : null}
       </DragOverlay>
 

@@ -113,10 +113,9 @@
   --radius-xl: calc(var(--radius) + 4px);
 
   --animate-in-fade: fade-in 0.15s ease-out;
-  --animate-overlay: overlay-in 0.18s ease-out;
-  --animate-content: content-in 0.18s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-palette: palette-in 0.16s cubic-bezier(0.16, 1, 0.3, 1);
-  --animate-slide-up: slide-up 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Shared easing for drag-and-drop settling. */
+  --ease-settle: cubic-bezier(0.2, 0, 0, 1);
 }
 
 @layer base {
@@ -212,6 +211,16 @@
   }
 }
 
+/*
+ * Centering is done with Tailwind's `-translate-x-1/2`, which in v4 compiles to
+ * the standalone `translate` property — NOT `transform`. Animating `transform:
+ * translate(-50%, …)` here would stack a second -50% on top of it and the panel
+ * would fly in from far left, then snap to centre when the animation ended.
+ *
+ * So these keyframes only ever touch `transform: translateY()` and the
+ * standalone `scale` property, both of which compose cleanly with `translate`.
+ */
+
 @keyframes overlay-in {
   from {
     opacity: 0;
@@ -221,25 +230,64 @@
   }
 }
 
+@keyframes overlay-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
 @keyframes content-in {
   from {
     opacity: 0;
-    transform: translate(-50%, -48%) scale(0.97);
+    transform: translateY(-6px);
+    scale: 0.97;
   }
   to {
     opacity: 1;
-    transform: translate(-50%, -50%) scale(1);
+    transform: translateY(0);
+    scale: 1;
+  }
+}
+
+@keyframes content-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-4px);
+    scale: 0.98;
   }
 }
 
 @keyframes palette-in {
   from {
     opacity: 0;
-    transform: translate(-50%, 0) scale(0.98);
+    transform: translateY(-12px);
+    scale: 0.98;
   }
   to {
     opacity: 1;
-    transform: translate(-50%, 0) scale(1);
+    transform: translateY(0);
+    scale: 1;
+  }
+}
+
+@keyframes palette-out {
+  from {
+    opacity: 1;
+    transform: translateY(0);
+    scale: 1;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px);
+    scale: 0.985;
   }
 }
 
@@ -247,25 +295,51 @@
   from {
     opacity: 0;
     transform: translateY(4px);
+    scale: 0.98;
   }
   to {
     opacity: 1;
     transform: translateY(0);
+    scale: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
   }
 }
 
 /* Radix data-state driven animation hooks. */
 [data-state="open"][data-slot="overlay"] {
-  animation: var(--animate-overlay);
+  animation: overlay-in 0.18s ease-out;
 }
+[data-state="closed"][data-slot="overlay"] {
+  animation: overlay-out 0.14s ease-in;
+}
+
 [data-state="open"][data-slot="dialog-content"] {
-  animation: var(--animate-content);
+  animation: content-in 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
+[data-state="closed"][data-slot="dialog-content"] {
+  animation: content-out 0.14s ease-in;
+}
+
 [data-state="open"][data-slot="palette-content"] {
-  animation: var(--animate-palette);
+  animation: palette-in 0.19s cubic-bezier(0.16, 1, 0.3, 1);
 }
+[data-state="closed"][data-slot="palette-content"] {
+  animation: palette-out 0.13s ease-in;
+}
+
 [data-state="open"][data-slot="menu-content"] {
-  animation: var(--animate-slide-up);
+  animation: slide-up 0.16s cubic-bezier(0.16, 1, 0.3, 1);
+}
+[data-state="closed"][data-slot="menu-content"] {
+  animation: fade-out 0.1s ease-in;
 }
 
 @media (prefers-reduced-motion: reduce) {

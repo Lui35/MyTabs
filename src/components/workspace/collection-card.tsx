@@ -3,6 +3,7 @@
 import * as React from "react";
 import { useDroppable } from "@dnd-kit/core";
 import { SortableContext, useSortable, verticalListSortingStrategy } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   ChevronRight,
   Download,
@@ -57,6 +58,8 @@ export function CollectionCard({
   collectionId,
   viewMode,
   sortMode,
+  shiftTabs,
+  shiftCollections,
   dropTarget,
   isDropCandidate,
   onRequestEdit,
@@ -66,6 +69,10 @@ export function CollectionCard({
   collectionId: string;
   viewMode: ViewMode;
   sortMode: SortMode;
+  /** Let dnd-kit slide the tabs in this collection apart. */
+  shiftTabs: boolean;
+  /** A collection is being reordered, so cards should slide apart. */
+  shiftCollections: boolean;
   dropTarget: DropTarget | null;
   isDropCandidate: boolean;
   onRequestEdit: (id: string) => void;
@@ -78,10 +85,24 @@ export function CollectionCard({
   const setCollapsed = useWorkspace((s) => s.setCollectionCollapsed);
   const openAddTab = useUI((s) => s.openAddTab);
 
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    isDragging,
+    transform,
+    transition,
+  } = useSortable({
     id: collectionId,
     data: { type: "collection" },
   });
+
+  // Only trust dnd-kit's offsets while a collection is actually being
+  // reordered; during a tab drag this card isn't the active sortable and the
+  // computed transform is meaningless.
+  const style: React.CSSProperties | undefined = shiftCollections
+    ? { transform: CSS.Translate.toString(transform), transition }
+    : undefined;
 
   const { setNodeRef: setDropRef } = useDroppable({
     id: collectionDropId(collectionId),
@@ -124,10 +145,14 @@ export function CollectionCard({
   return (
     <section
       ref={setNodeRef}
+      style={style}
       id={collectionAnchorId(collectionId)}
       aria-label={collection.name}
       className={cn(
-        "rounded-xl border border-border bg-surface shadow-panel transition-[border-color,box-shadow,opacity]",
+        "rounded-xl border border-border bg-surface shadow-panel",
+        // `transition` from dnd-kit drives transform; keep the rest separate so
+        // the two never fight over the same property.
+        "transition-[border-color,box-shadow,opacity]",
         isDragging && "opacity-40",
         isDropCandidate && "border-accent ring-2 ring-accent/25",
       )}
@@ -255,6 +280,7 @@ export function CollectionCard({
                       collectionId={collectionId}
                       viewMode={viewMode}
                       disableSort={sortingLocked}
+                      shift={shiftTabs}
                     />
                   </React.Fragment>
                 ))}

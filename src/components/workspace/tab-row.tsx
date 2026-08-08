@@ -2,6 +2,7 @@
 
 import * as React from "react";
 import { useSortable } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import { Ellipsis, GripVertical } from "lucide-react";
 
 import { Favicon } from "@/components/favicon";
@@ -37,15 +38,25 @@ export function TabRow({
   collectionId,
   viewMode,
   disableSort,
+  shift,
 }: {
   tabId: string;
   collectionId: string;
   viewMode: ViewMode;
   disableSort?: boolean;
+  /** Apply dnd-kit's sibling offsets so rows slide out of the way. */
+  shift?: boolean;
 }) {
   const tab = useWorkspace((s) => s.tabs[tabId]);
 
-  const { attributes, listeners, setNodeRef, isDragging } = useSortable({
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    isDragging,
+    transform,
+    transition,
+  } = useSortable({
     id: tabId,
     disabled: disableSort,
     data: { type: "tab", collectionId },
@@ -53,12 +64,18 @@ export function TabRow({
 
   if (!tab) return null;
 
-  // Sibling transforms are deliberately not applied: the destination is shown
-  // by an explicit insertion line instead, which behaves identically whether
-  // the drag started in a collection or in the Open Tabs sidebar.
+  // Offsets are only meaningful when the dragged tab belongs to this
+  // collection's sortable context. For a drag arriving from another collection
+  // or from the Open Tabs sidebar there is nothing to shift against, so the
+  // parent renders an insertion line instead.
+  const style: React.CSSProperties | undefined = shift
+    ? { transform: CSS.Translate.toString(transform), transition }
+    : undefined;
+
   return (
     <div
       ref={setNodeRef}
+      style={style}
       id={tabAnchorId(tabId)}
       data-tab-id={tabId}
       className={cn("relative", isDragging && "opacity-35")}
