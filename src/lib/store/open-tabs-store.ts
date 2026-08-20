@@ -34,33 +34,103 @@ export const useOpenTabs = create<OpenTabsState>((set) => ({
   setTabs: (tabs) => set({ tabs }),
 }));
 
+type ChromeApi = {
+  tabs: {
+    query: (query: { currentWindow: boolean }) => Promise<Array<{ id?: number; title?: string; url?: string; favIconUrl?: string; windowId?: number; active?: boolean; index?: number }>>;
+    getCurrent: () => Promise<{ id?: number } | undefined>;
+    update: (tabId: number, update: { active: boolean }) => Promise<unknown>;
+    remove: (tabIds: number[]) => Promise<unknown>;
+    onCreated: ChromeEvent;
+    onUpdated: ChromeEvent;
+    onRemoved: ChromeEvent;
+    onMoved: ChromeEvent;
+    onActivated: ChromeEvent;
+    onAttached: ChromeEvent;
+    onDetached: ChromeEvent;
+    onReplaced: ChromeEvent;
+  };
+  runtime?: { getManifest?: () => { version?: string } };
+};
+
+type ChromeEvent = {
+  addListener: (listener: (...args: unknown[]) => void) => void;
+  removeListener: (listener: (...args: unknown[]) => void) => void;
+};
+
+function directChromeApi(): ChromeApi | null {
+  const candidate = (
+    globalThis as typeof globalThis & { chrome?: Partial<ChromeApi> }
+  ).chrome;
+  if (!candidate?.tabs || typeof candidate.tabs.getCurrent !== "function") return null;
+  if (typeof candidate.tabs.query !== "function") return null;
+  return candidate as ChromeApi;
+}
+
 function send(message: AppMessage) {
   if (typeof window === "undefined") return;
   window.postMessage(message, window.location.origin);
 }
 
 export function requestOpenTabs() {
+  const chrome = directChromeApi();
+  if (chrome) {
+    void Promise.all([
+      chrome.tabs.query({ currentWindow: true }),
+      chrome.tabs.getCurrent(),
+    ])
+      .then(([tabs, currentTab]) => {
+        useOpenTabs
+          .getState()
+          .setTabs(
+            sanitize(
+              tabs as unknown as BridgeOpenTab[],
+              currentTab?.id == null ? null : String(currentTab.id),
+            ),
+          );
+        useOpenTabs.getState().setStatus("connected");
+      })
+      .catch(() => {
+        // Chrome can reject while a window is closing. The next tab event or
+        // focus refresh will retry without blanking the last useful snapshot.
+      });
+    return;
+  }
   send({ source: APP_SOURCE, type: "REQUEST_TABS", version: PROTOCOL_VERSION });
 }
 
 export function focusBrowserTab(tabId: string) {
+  const chrome = directChromeApi();
+  const numericId = Number(tabId);
+  if (chrome && Number.isFinite(numericId)) {
+    void chrome.tabs.update(numericId, { active: true });
+    return;
+  }
   send({ source: APP_SOURCE, type: "FOCUS_TAB", version: PROTOCOL_VERSION, tabId });
 }
 
 export function closeBrowserTabs(tabIds: string[]) {
-  send({
-    source: APP_SOURCE,
-    type: "CLOSE_TABS",
-    version: PROTOCOL_VERSION,
-    tabIds,
-  });
+  const chrome = directChromeApi();
+  const numericIds = tabIds.map(Number).filter(Number.isFinite);
+  if (chrome && numericIds.length > 0) {
+    void chrome.tabs.remove(numericIds).then(requestOpenTabs);
+    return;
+  }
+  send({ source: APP_SOURCE, type: "CLOSE_TABS", version: PROTOCOL_VERSION, tabIds });
 }
 
 /** Only http(s) tabs are worth saving; drop chrome:// and extension pages. */
-function sanitize(tabs: BridgeOpenTab[]): OpenTab[] {
+function sanitize(
+  tabs: BridgeOpenTab[],
+  currentTabId: string | null = null,
+): OpenTab[] {
   if (!Array.isArray(tabs)) return [];
   return tabs
-    .filter((tab) => typeof tab?.url === "string" && isSafeUrl(tab.url))
+    .filter(
+      (tab) =>
+        String(tab?.id) !== currentTabId &&
+        typeof tab?.url === "string" &&
+        isSafeUrl(tab.url),
+    )
     .map((tab) => ({
       id: String(tab.id),
       title: typeof tab.title === "string" ? tab.title : "",
@@ -94,6 +164,40 @@ export interface BridgeHandlers {
  */
 export function installExtensionBridge(handlers: BridgeHandlers): () => void {
   if (typeof window === "undefined") return () => {};
+
+  const direct = directChromeApi();
+  if (direct) {
+    const version = direct.runtime?.getManifest?.().version ?? null;
+    useOpenTabs.getState().setStatus("connected", version);
+    requestOpenTabs();
+    let refreshTimer: ReturnType<typeof setTimeout> | null = null;
+    const refresh = () => {
+      if (refreshTimer !== null) clearTimeout(refreshTimer);
+      refreshTimer = setTimeout(() => {
+        refreshTimer = null;
+        requestOpenTabs();
+      }, 50);
+    };
+    const tabEvents = [
+      direct.tabs.onCreated,
+      direct.tabs.onUpdated,
+      direct.tabs.onRemoved,
+      direct.tabs.onMoved,
+      direct.tabs.onActivated,
+      direct.tabs.onAttached,
+      direct.tabs.onDetached,
+      direct.tabs.onReplaced,
+    ].filter(Boolean);
+    tabEvents.forEach((event) => event.addListener(refresh));
+    window.addEventListener("focus", refresh);
+    document.addEventListener("visibilitychange", refresh);
+    return () => {
+      if (refreshTimer !== null) clearTimeout(refreshTimer);
+      tabEvents.forEach((event) => event.removeListener(refresh));
+      window.removeEventListener("focus", refresh);
+      document.removeEventListener("visibilitychange", refresh);
+    };
+  }
 
   const { setStatus, setTabs } = useOpenTabs.getState();
 

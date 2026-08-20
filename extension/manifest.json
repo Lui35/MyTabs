@@ -1,16 +1,12 @@
 {
   "manifest_version": 3,
-  "name": "Tabs — Website Workspace",
-  "version": "1.0.0",
-  "description": "See your open browser tabs inside the Tabs workspace and save them into collections.",
+  "name": "Tabs — Local-first New Tab",
+  "version": "2.1.0",
+  "description": "An instant, offline-first workspace for saved websites and browser tabs.",
   "minimum_chrome_version": "111",
 
-  "permissions": ["tabs", "storage"],
-
-  "background": {
-    "service_worker": "background.js",
-    "type": "module"
-  },
+  "permissions": ["tabs", "storage", "unlimitedStorage"],
+  "host_permissions": ["https://*.supabase.co/*"],
 
   "action": {
     "default_title": "Tabs",
@@ -22,7 +18,7 @@
   },
 
   "chrome_url_overrides": {
-    "newtab": "newtab.html"
+    "newtab": "workspace.html"
   },
 
   "icons": {
@@ -30,14 +26,5 @@
     "32": "icons/icon-32.png",
     "48": "icons/icon-48.png",
     "128": "icons/icon-128.png"
-  },
-
-  "content_scripts": [
-    {
-      "matches": ["https://my-tabs-phi.vercel.app/*"],
-      "js": ["content-bridge.js"],
-      "run_at": "document_start",
-      "all_frames": false
-    }
-  ]
+  }
 }

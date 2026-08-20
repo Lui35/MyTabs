@@ -19,6 +19,9 @@ npm run dev
 
 Open http://localhost:3000.
 
+This starts the optional legacy web app. The browser extension described below
+does not require this command, localhost, or a deployment.
+
 `.env.local` is already pointed at the Supabase project **Tabs**
 (`cwcyfktdrrpugtiptcex`). To use a different project, copy `.env.example` and
 apply the migrations in `supabase/migrations/` in order.
@@ -53,18 +56,17 @@ device-local workspace backed by `localStorage`, with cloud sync disabled.
 ## Architecture
 
 ```
-Browser extension (MV3)
-  service worker  ──chrome.tabs──▶ open tab list
-        │
-  content bridge  ──postMessage──▶ web app  ──▶ Supabase (RLS)
+Chrome new tab ──▶ packaged extension UI ──▶ chrome.storage.local
+                              │
+                              └── background attempt ──▶ Supabase (optional, RLS)
 ```
 
-**The extension holds no Supabase session.** It reports open tabs and asks the
-already-signed-in web app to perform writes, so there is exactly one
-authenticated write path and the extension needs only `tabs` + `storage`
-permissions.
+The extension owns its local snapshot, pending-write queue, and optional
+Supabase session. Rendering and mutations never wait for the network. The
+Next.js application remains in the repository as a separate legacy client, but
+it is not part of the extension runtime.
 
-### Client state
+### Legacy web client state
 
 `src/lib/store/workspace-store.ts` is a normalized Zustand store
 (`collections`, `tabs` records plus derived `collectionOrder` / `tabOrder`
@@ -137,6 +139,7 @@ cross-collection moves, and multi-select drops from the sidebar.
 ## Browser extension
 
 ```bash
+npm run build:extension       # rebuild the packaged React/Tailwind UI
 node extension/make-icons.mjs   # only needed if you change the icon
 ```
 
@@ -144,27 +147,31 @@ node extension/make-icons.mjs   # only needed if you change the icon
 2. Enable **Developer mode**
 3. **Load unpacked** → select the `extension/` folder
 
-The Open Tabs sidebar picks it up within about a second. Until then the sidebar
-shows an install prompt rather than pretending to be empty.
+The extension is fully packaged and local-first. Opening a new tab renders
+`extension/workspace.html` directly; it does not navigate to localhost, Vercel,
+or any other web server.
 
-To point the extension at a deployed origin, add it to **both**
-`extension/manifest.json` (`content_scripts.matches`) and `APP_ORIGINS` in
-`extension/shared.js`.
+Workspace data and pending changes are stored as structured JSON in
+`chrome.storage.local`, so the interface is available immediately and works
+offline. The toolbar popup reads and writes the same local snapshot.
+
+### Optional Supabase sync
+
+Open Settings in the new-tab workspace and provide the Supabase project URL,
+publishable key, and account credentials. Local changes are queued first, then
+pushed through the authenticated Data API. After pending changes are flushed,
+the extension pulls the authoritative workspace snapshot in the background.
+
+The publishable key is safe to use in a client extension; never enter a
+`service_role` or secret key. Row Level Security remains responsible for
+restricting each account to its own rows.
 
 ### New tab page
 
-The extension takes over the new tab page via `chrome_url_overrides`, so every
-new tab opens the workspace.
-
-Chrome only accepts a packaged extension page there — it will not let an
-override point straight at an external URL. `extension/newtab.html` is
-therefore a minimal themed splash that immediately hands off with
-`location.replace(DEFAULT_APP_URL)`. Using `replace` keeps the override out of
-the back-button history, and the splash reveals a manual link if the workspace
-can't be reached (dev server down, wrong origin configured).
-
-The destination is `DEFAULT_APP_URL` in `extension/shared.js`, so there is no
-third place to update when you deploy.
+The extension takes over the new tab page through `chrome_url_overrides`.
+`workspace.html`, `workspace-app.css`, and `workspace-app.js` are packaged
+assets built from the same React, Tailwind, Radix, and dnd-kit components as the
+web interface, so no application server or deployment is required.
 
 To keep Chrome's own new tab page, delete the `chrome_url_overrides` block from
 the manifest and reload the extension.

@@ -61,7 +61,7 @@ interface WorkspaceState {
   settings: Settings;
 
   // lifecycle
-  init: (args: { client: TabsClient | null; userId: string | null }) => Promise<void>;
+  init: (args: { client: TabsClient | null; userId: string | null; backend?: WorkspaceBackend }) => Promise<void>;
   teardown: () => void;
   applyRemote: (event: RemoteEvent) => void;
 
@@ -196,17 +196,17 @@ export const useWorkspace = create<WorkspaceState>((set, get) => {
 
     // ---------------- lifecycle ----------------
 
-    init: async ({ client, userId }) => {
+    init: async ({ client, userId, backend }) => {
       const token = ++initToken;
       unsubscribeRemote?.();
       unsubscribeRemote = null;
 
-      const cloud = Boolean(client && userId);
-      const active: WorkspaceBackend = cloud
+      const cloud = backend ? backend.kind === "supabase" : Boolean(client && userId);
+      const active: WorkspaceBackend = backend ?? (cloud
         ? new SupabaseBackend(client!, userId!)
-        : new LocalBackend();
+        : new LocalBackend());
 
-      const effectiveUserId = cloud ? userId! : "local";
+      const effectiveUserId = userId ?? "local";
 
       set({
         status: "loading",
