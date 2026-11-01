@@ -6,8 +6,8 @@ import { Dialog, DialogContent, DialogFooter, DialogHeader } from "@/components/
 import { Input } from "@/components/ui/input";
 import { Field } from "@/components/ui/primitives";
 import { toast } from "@/lib/toast";
-import { loadSession, loadSupabaseConfig, saveSupabaseConfig } from "../extension/local-store.js";
-import { signInWithPassword, signOutExtension } from "../extension/supabase-sync.js";
+import { loadSession, loadSupabaseConfig, saveSupabaseConfig } from "../dist/local-store.js";
+import { signInWithPassword, signOutExtension } from "../dist/supabase-sync.js";
 
 export function ExtensionSettingsDialog() {
   const [open, setOpen] = React.useState(false);

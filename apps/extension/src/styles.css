@@ -1,5 +1,5 @@
-@import "../src/app/globals.css";
-@source "../src";
+@import "../../../shared/styles/globals.css";
+@source "../../../shared";
 @source ".";
 
 @font-face {

@@ -3,11 +3,16 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "eslint",
-    "build:extension": "node scripts/build-extension.mjs"
+    "dev": "npm run dev:web",
+    "build": "npm run build:web",
+    "start": "npm run start:web",
+    "dev:web": "next dev apps/web",
+    "build:web": "next build apps/web",
+    "start:web": "next start apps/web",
+    "build:extension": "node apps/extension/scripts/build.mjs",
+    "icons:extension": "node apps/extension/scripts/make-icons.mjs",
+    "typecheck": "next typegen apps/web && tsc -p apps/web/tsconfig.json --noEmit && tsc -p apps/extension/tsconfig.json --noEmit",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@dnd-kit/core": "^6.3.1",

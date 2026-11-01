@@ -19,16 +19,17 @@
       }
     ],
     "paths": {
-      "@/*": ["./src/*"]
+      "@/*": ["./shared/*"],
+      "@web/*": ["./apps/web/src/*"]
     }
   },
   "include": [
-    "next-env.d.ts",
-    "**/*.ts",
-    "**/*.tsx",
-    ".next/types/**/*.ts",
-    ".next/dev/types/**/*.ts",
-    "**/*.mts"
+    "apps/**/*.ts",
+    "apps/**/*.tsx",
+    "shared/**/*.ts",
+    "shared/**/*.tsx",
+    "apps/web/.next/types/**/*.ts",
+    "apps/web/.next/dev/types/**/*.ts"
   ],
   "exclude": ["node_modules"]
 }

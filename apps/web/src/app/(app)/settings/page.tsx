@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 
-import { signOut } from "@/app/(auth)/actions";
+import { signOut } from "@web/app/(auth)/actions";
 import { getCurrentUser } from "@/lib/supabase/server";
 import { deleteAccount } from "./actions";
 import { SettingsView } from "./settings-view";

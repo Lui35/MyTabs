@@ -1,4 +1,4 @@
-import { signOut } from "@/app/(auth)/actions";
+import { signOut } from "@web/app/(auth)/actions";
 import { AppChrome } from "@/components/layout/app-chrome";
 import { AppHeader } from "@/components/layout/app-header";
 import { WorkspaceBoot } from "@/components/providers";
