@@ -1,7 +1,7 @@
 import type { Collection, SavedTab, Settings } from "@/lib/types";
 import type { FlushPayload, RemoteEvent, WorkspaceBackend, WorkspaceSnapshot } from "@/lib/store/backend";
-import { markCollectionDeleted, markCollectionUpsert, markTabDeleted, markTabUpsert, loadLocalState, saveLocalState } from "../extension/local-store.js";
-import { syncWithSupabase } from "../extension/supabase-sync.js";
+import { markCollectionDeleted, markCollectionUpsert, markTabDeleted, markTabUpsert, loadLocalState, saveLocalState } from "../dist/local-store.js";
+import { syncWithSupabase } from "../dist/supabase-sync.js";
 
 export class ChromeStorageBackend implements WorkspaceBackend {
   readonly kind = "local" as const;

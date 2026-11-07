@@ -209,7 +209,7 @@ export function SettingsView({
                     ? `Connected${extensionVersion ? ` · v${extensionVersion}` : ""} · ${formatCount(openTabCount, "open tab")}`
                     : extensionStatus === "checking"
                       ? "Looking for the extension…"
-                      : "Not detected. Load the extension/ folder as an unpacked extension."}
+                      : "Not detected. Load apps/extension/dist as an unpacked extension."}
                 </span>
               </span>
               <Badge

@@ -5,9 +5,10 @@ import { readFile, writeFile } from "node:fs/promises";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
-const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
-const extensionSource = path.join(root, "extension-src");
-const extensionOutput = path.join(root, "extension");
+const productRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const repoRoot = path.resolve(productRoot, "../..");
+const extensionSource = path.join(productRoot, "src");
+const extensionOutput = path.join(productRoot, "dist");
 
 await build({
   entryPoints: [path.join(extensionSource, "main.tsx")],
@@ -19,6 +20,7 @@ await build({
   minify: true,
   legalComments: "none",
   jsx: "automatic",
+  tsconfig: path.join(repoRoot, "tsconfig.json"),
   alias: {
     "next/link": path.join(extensionSource, "shims", "next-link.tsx"),
     "next/navigation": path.join(extensionSource, "shims", "next-navigation.ts"),
@@ -46,4 +48,4 @@ const cssResult = await postcss([tailwindcss()]).process(cssSource, {
 });
 await writeFile(path.join(extensionOutput, "workspace-app.css"), cssResult.css, "utf8");
 
-console.log("Built extension/workspace-app.js and extension/workspace-app.css");
+console.log("Built apps/extension/dist/workspace-app.js and workspace-app.css");

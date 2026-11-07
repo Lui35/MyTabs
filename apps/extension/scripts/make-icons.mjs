@@ -1,6 +1,6 @@
 /**
  * Generates the extension's PNG icons with no dependencies.
- * Run from the repo root:  node extension/make-icons.mjs
+ * Run from the repo root: npm run icons:extension
  */
 
 import { deflateSync } from "node:zlib";
@@ -8,7 +8,7 @@ import { mkdirSync, writeFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
-const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "icons");
+const OUT_DIR = join(dirname(fileURLToPath(import.meta.url)), "..", "dist", "icons");
 const SIZES = [16, 32, 48, 128];
 
 // Accent violet, matching --accent in the app.

@@ -309,7 +309,7 @@ function ExtensionMissing() {
       <p className="rounded-md border border-border bg-muted px-2.5 py-1.5 text-left font-mono text-[11px] leading-relaxed text-muted-foreground">
         chrome://extensions → Developer mode →
         <br />
-        Load unpacked → <span className="text-foreground">extension/</span>
+        Load unpacked → <span className="text-foreground">apps/extension/dist</span>
       </p>
       <Button variant="ghost" size="sm" onClick={() => requestOpenTabs()}>
         <RefreshCcw />

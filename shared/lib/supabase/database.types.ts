@@ -1,5 +1,5 @@
 // Generated from the Supabase project schema. Regenerate after migrations with:
-//   npx supabase gen types typescript --project-id cwcyfktdrrpugtiptcex > src/lib/supabase/database.types.ts
+//   npx supabase gen types typescript --project-id cwcyfktdrrpugtiptcex > shared/lib/supabase/database.types.ts
 
 export type Json =
   | string
